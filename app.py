@@ -2,32 +2,112 @@ import streamlit as st
 import pickle
 import pandas as pd
 
-# Load the saved model
-with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
+# ---------- Load Model ----------
+try:
+    with open('model.pkl', 'rb') as f:
+        model = pickle.load(f)
+except Exception as e:
+    st.error(f"Model loading failed: {e}")
+    st.stop()
 
+# ---------- Custom CSS Styling ----------
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+    html, body, .main {
+        background-image: url("https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1950&q=80");
+        background-size: cover;
+        background-attachment: fixed;
+        font-family: 'Roboto', sans-serif;
+        color: #ffffff;
+    }
+
+    .main {
+        background-color: rgba(0, 0, 0, 0.5);  /* Overlay */
+        padding: 40px;
+        border-radius: 15px;
+    }
+
+    h1 {
+        color: #ffffff;
+        text-align: center;
+        margin-bottom: 40px;
+        font-weight: 700;
+    }
+
+    .stNumberInput>div>div>input {
+        background-color: #ffffff20 !important;
+        color: white !important;
+        border-radius: 8px;
+    }
+
+    .stSelectbox>div>div>div {
+        background-color: #ffffff20 !important;
+        color: white !important;
+        border-radius: 8px;
+    }
+
+    .stButton>button {
+        display: block;
+        margin: auto;
+        background: linear-gradient(90deg, #4a90e2, #357abd);
+        color: white;
+        font-size: 18px;
+        padding: 10px 30px;
+        border-radius: 10px;
+        border: none;
+        transition: background 0.3s ease;
+    }
+
+    .stButton>button:hover {
+        background: linear-gradient(90deg, #357abd, #2c6aa0);
+    }
+
+    .prediction-box {
+        padding: 25px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-left: 8px solid #004080;
+        border-radius: 10px;
+        color: #002b50;
+        font-size: 22px;
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    label, .stMarkdown, .stSelectbox label {
+        font-size: 16px !important;
+        font-weight: 500;
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ---------- Title ----------
 st.title("Boston Housing Price Prediction")
-st.write("Enter the values of the features below to predict the house price (in $1000s).")
+st.markdown("Enter the values below to predict the house price (in $1000s).")
 
-# Sidebar inputs for features
-st.sidebar.header("Input Features")
+# ---------- Layout for Input Fields ----------
+col1, col2 = st.columns(2)
 
-# These are some key features from the Boston dataset
-CRIM = st.sidebar.number_input("Per capita crime rate (CRIM)", min_value=0.0, max_value=100.0, value=0.1)
-ZN = st.sidebar.number_input("Proportion of residential land zoned (ZN)", min_value=0.0, max_value=100.0, value=18.0)
-INDUS = st.sidebar.number_input("Proportion of non-retail business acres per town (INDUS)", min_value=0.0, max_value=30.0, value=10.0)
-CHAS = st.sidebar.selectbox("Charles River dummy variable (CHAS) [0: no, 1: yes]", options=[0, 1])
-NOX = st.sidebar.number_input("Nitric oxides concentration (NOX)", min_value=0.0, max_value=1.0, value=0.5)
-RM = st.sidebar.number_input("Average number of rooms per dwelling (RM)", min_value=1.0, max_value=10.0, value=6.0)
-AGE = st.sidebar.number_input("Proportion of owner-occupied units built prior to 1940 (AGE)", min_value=0.0, max_value=100.0, value=50.0)
-DIS = st.sidebar.number_input("Weighted distances to employment centers (DIS)", min_value=0.0, max_value=15.0, value=5.0)
-RAD = st.sidebar.number_input("Index of accessibility to highways (RAD)", min_value=1, max_value=24, value=4)
-TAX = st.sidebar.number_input("Property tax rate (TAX)", min_value=100.0, max_value=1000.0, value=300.0)
-PTRATIO = st.sidebar.number_input("Pupil-teacher ratio (PTRATIO)", min_value=10.0, max_value=30.0, value=18.0)
-B = st.sidebar.number_input("Proportion of blacks by town (B)", min_value=0.0, max_value=400.0, value=350.0)
-LSTAT = st.sidebar.number_input("% lower status population (LSTAT)", min_value=0.0, max_value=40.0, value=12.0)
+with col1:
+    CRIM = st.number_input("Per capita crime rate (CRIM)", 0.0, 100.0, 0.1)
+    ZN = st.number_input("Residential land zoned (ZN)", 0.0, 100.0, 18.0)
+    INDUS = st.number_input("Non-retail business acres (INDUS)", 0.0, 30.0, 10.0)
+    CHAS = st.selectbox("Charles River proximity (CHAS)", [0, 1])
+    NOX = st.number_input("Nitric oxides concentration (NOX)", 0.0, 1.0, 0.5)
+    RM = st.number_input("Avg rooms per dwelling (RM)", 1.0, 10.0, 6.0)
+    AGE = st.number_input("Older units (%) (AGE)", 0.0, 100.0, 50.0)
 
-# Create dataframe from inputs
+with col2:
+    DIS = st.number_input("Distance to employment centers (DIS)", 0.0, 15.0, 5.0)
+    RAD = st.number_input("Highway access index (RAD)", 1, 24, 4)
+    TAX = st.number_input("Property tax rate (TAX)", 100.0, 1000.0, 300.0)
+    PTRATIO = st.number_input("Pupil-teacher ratio (PTRATIO)", 10.0, 30.0, 18.0)
+    B = st.number_input("Proportion of blacks by town (B)", 0.0, 400.0, 350.0)
+    LSTAT = st.number_input("Lower status population (%) (LSTAT)", 0.0, 40.0, 12.0)
+
+# ---------- Input DataFrame ----------
 input_data = pd.DataFrame({
     'CRIM': [CRIM],
     'ZN': [ZN],
@@ -44,8 +124,14 @@ input_data = pd.DataFrame({
     'LSTAT': [LSTAT]
 })
 
-# Predict button
+# ---------- Prediction Button ----------
+st.markdown("### ")
 if st.button("Predict House Price"):
-    prediction = model.predict(input_data)[0]
-    st.success(f"Predicted House Price: ${prediction*1000:.2f}")
-
+    try:
+        prediction = model.predict(input_data)[0]
+        st.markdown(
+            f"<div class='prediction-box'>Predicted House Price: ${prediction * 1000:.2f}</div>",
+            unsafe_allow_html=True
+        )
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
